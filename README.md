@@ -4,6 +4,89 @@ CowAgent 可转债申购与上市提醒技能。
 
 本技能从用户配置的可转债日历数据源读取数据，支持查询申购日、查询上市日、记录中签转债，并通过 CowAgent scheduler 创建一次性提醒任务。
 
+## 快速开始
+
+### 1. 安装技能
+
+在 CowAgent 服务器上执行：
+
+```bash
+cow skill install HanShuheng/bond-calendar-reminder
+```
+
+如果 CLI 无法识别 GitHub shorthand，也可以使用仓库地址：
+
+```bash
+cow skill install https://github.com/HanShuheng/bond-calendar-reminder
+```
+
+手动安装方式：
+
+```bash
+mkdir -p ~/cow/skills
+git clone https://github.com/HanShuheng/bond-calendar-reminder.git ~/cow/skills/bond-calendar-reminder
+```
+
+### 2. 安装依赖
+
+```bash
+cd ~/cow/skills/bond-calendar-reminder
+python3 -m pip install -r requirements.txt
+```
+
+如果 CowAgent 使用虚拟环境，建议改用 CowAgent 的 Python：
+
+```bash
+~/CowAgent/.venv/bin/python -m pip install -r ~/cow/skills/bond-calendar-reminder/requirements.txt
+```
+
+### 3. 创建配置
+
+```bash
+mkdir -p ~/cow/bond_reminders
+cp ~/cow/skills/bond-calendar-reminder/examples/config.example.json ~/cow/bond_reminders/config.json
+```
+
+然后编辑：
+
+```bash
+nano ~/cow/bond_reminders/config.json
+```
+
+至少需要把 `data_source.calendar_url` 改成你自己的可转债日历 JSON 接口。`base_url`、`detail_url_template`、`headers` 按你的数据源需要填写。
+
+### 4. 验证命令
+
+```bash
+cd ~/cow/skills/bond-calendar-reminder
+python3 scripts/bond_calendar.py --help
+python3 scripts/bond_calendar.py info
+python3 scripts/bond_calendar.py find-subscribe --date 今天
+```
+
+如果 `info` 显示“提醒目标：未识别”，先在微信里和 CowAgent 机器人发一条消息，再重新执行：
+
+```bash
+python3 scripts/bond_calendar.py info
+```
+
+### 5. 配置自动化
+
+用 crontab 每天自动检查申购和中签上市日期：
+
+```bash
+crontab -e
+```
+
+示例：
+
+```cron
+0 7 * * * /usr/bin/python3 ~/cow/skills/bond-calendar-reminder/scripts/bond_calendar.py prepare-subscribe-today >> ~/cow/bond_reminders/bond_calendar.log 2>&1
+5 7 * * * /usr/bin/python3 ~/cow/skills/bond-calendar-reminder/scripts/bond_calendar.py check-tracked-listings >> ~/cow/bond_reminders/bond_calendar.log 2>&1
+```
+
+如果 CowAgent 使用虚拟环境，请把 `/usr/bin/python3` 替换为 CowAgent 的 Python 路径。
+
 ## 元数据
 
 | 字段 | 值 |
