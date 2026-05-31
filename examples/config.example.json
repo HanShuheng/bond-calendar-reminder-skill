@@ -1,19 +1,48 @@
 {
+  "_comment": "通用配置模板。复制到 ~/cow/bond_reminders/config.json 后，把 data_source.calendar_url 等地址改成你自己的可转债日历 JSON 数据源。",
   "data_source": {
+    "_comment": "数据源配置。脚本会从 calendar_url 拉取 JSON 日历数据，再根据标题和日期解析申购日、上市日等事件。",
     "calendar_url": "https://example.com/path/to/convert-bond-calendar.json",
+    "_calendar_url_comment": "必填：可转债日历 JSON 接口地址。接口应返回 JSON 数组。",
     "base_url": "https://example.com",
+    "_base_url_comment": "可选：当数据源返回相对详情页地址时，用这个基础地址拼成完整 URL。",
     "detail_url_template": "https://example.com/convert-bond/{code}",
+    "_detail_url_template_comment": "可选：当事件没有详情页地址时，用转债代码生成详情页 URL，{code} 会替换为转债代码。",
     "headers": {
       "Referer": "https://example.com/calendar"
-    }
+    },
+    "_headers_comment": "可选：请求数据源时附加的 HTTP headers。不要把 token、cookie、Authorization 等敏感信息提交到仓库。"
   },
   "subscribe_reminder_schedule": [
-    {"time": "10:00", "label": "10:00 申购提醒"},
-    {"time": "13:00", "label": "13:00 申购提醒"}
+    {
+      "_comment": "当天有可转债申购时，在 10:00 创建一次提醒。",
+      "time": "10:00",
+      "label": "10:00 申购提醒"
+    },
+    {
+      "_comment": "当天有可转债申购时，在 13:00 再提醒一次。",
+      "time": "13:00",
+      "label": "13:00 申购提醒"
+    }
   ],
   "listing_reminder_schedule": [
-    {"days_offset": -1, "time": "12:00", "label": "上市前一天 12:00"},
-    {"days_offset": 0, "time": "08:30", "label": "上市当天 08:30，开盘前 1 小时"},
-    {"days_offset": 0, "time": "13:00", "label": "上市当天 13:00"}
+    {
+      "_comment": "上市日前一天 12:00 提醒。days_offset = -1 表示上市日前一天。",
+      "days_offset": -1,
+      "time": "12:00",
+      "label": "上市前一天 12:00"
+    },
+    {
+      "_comment": "上市当天 08:30 提醒。days_offset = 0 表示上市当天。",
+      "days_offset": 0,
+      "time": "08:30",
+      "label": "上市当天 08:30，开盘前 1 小时"
+    },
+    {
+      "_comment": "上市当天 13:00 再提醒一次，可按个人习惯增删提醒点。",
+      "days_offset": 0,
+      "time": "13:00",
+      "label": "上市当天 13:00"
+    }
   ]
 }
