@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+
+# Runtime data. Keep personal reminders and channel IDs out of source control.
+bond_reminders/
+*.log
+*.tmp
