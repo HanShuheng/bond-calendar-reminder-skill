@@ -1,0 +1,17 @@
+{
+  "data_source": {
+    "calendar_url": "https://www.jisilu.cn/data/calendar/get_calendar_data/?qtype=CNV",
+    "base_url": "https://www.jisilu.cn",
+    "detail_url_template": "https://www.jisilu.cn/data/convert_bond_detail/{code}",
+    "headers": {
+      "Referer": "https://www.jisilu.cn/data/calendar/"
+    }
+  },
+  "subscribe_reminder_times": ["10:00", "13:00"],
+  "listing_reminder_schedule": [
+    {"days_offset": -1, "time": "12:00", "label": "上市前一天 12:00"},
+    {"days_offset": 0, "time": "08:30", "label": "上市当天 08:30，开盘前 1 小时"},
+    {"days_offset": 0, "time": "13:00", "label": "上市当天 13:00"}
+  ],
+  "listing_tracking_max_days": 180
+}

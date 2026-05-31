@@ -47,13 +47,20 @@ mkdir -p ~/cow/bond_reminders
 cp ~/cow/skills/bond-calendar-reminder/examples/config.example.json ~/cow/bond_reminders/config.json
 ```
 
+如果你直接使用集思录可转债日历接口，可以复制内置的集思录模板：
+
+```bash
+mkdir -p ~/cow/bond_reminders
+cp ~/cow/skills/bond-calendar-reminder/examples/config.jisilu.example.json ~/cow/bond_reminders/config.json
+```
+
 然后编辑：
 
 ```bash
 nano ~/cow/bond_reminders/config.json
 ```
 
-至少需要把 `data_source.calendar_url` 改成你自己的可转债日历 JSON 接口。`base_url`、`detail_url_template`、`headers` 按你的数据源需要填写。
+如果使用通用模板，至少需要把 `data_source.calendar_url` 改成你自己的可转债日历 JSON 接口。`base_url`、`detail_url_template`、`headers` 按你的数据源需要填写。使用集思录模板时，默认字段已经填好，可以先直接验证。
 
 ### 4. 验证命令
 
@@ -133,7 +140,8 @@ bond-calendar-reminder/
 ├── README.md
 ├── requirements.txt
 ├── examples/
-│   └── config.example.json
+│   ├── config.example.json
+│   └── config.jisilu.example.json
 ├── scripts/
 │   └── bond_calendar.py
 └── tests/
@@ -204,6 +212,11 @@ python3 scripts/bond_calendar.py --help
 mkdir -p ~/cow/bond_reminders
 cp examples/config.example.json ~/cow/bond_reminders/config.json
 ```
+
+示例文件：
+
+- `examples/config.example.json`：通用模板，适合接入任意可转债日历 JSON 数据源。
+- `examples/config.jisilu.example.json`：集思录模板，已填好集思录可转债日历接口和 Referer。
 
 示例：
 
