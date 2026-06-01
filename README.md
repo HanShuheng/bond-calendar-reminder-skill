@@ -14,6 +14,7 @@ CowAgent 专属可转债申购与上市提醒 Skill。
 - 支持按债券名、转债代码、申购代码、配售代码过滤申购事项。
 - 自动检查当天中签结果公布日，并创建 `10:30`、`13:00` 中签结果公布提醒。
 - 查询可转债上市日期。
+- 查询某个日期是否为中国 A 股交易日。
 - 记录中签转债；暂未查到上市日时自动追踪，查到后创建上市提醒。
 - 创建 CowAgent scheduler 一次性提醒任务。
 - 查看、取消当前债券相关提醒和追踪事项。
@@ -40,7 +41,7 @@ CowAgent 专属可转债申购与上市提醒 Skill。
 
 ## 项目状态
 
-当前版本为 `0.2.1`，属于早期可用版本。接口、配置字段和 CowAgent Skill 约定仍可能调整。建议个人使用前先在测试环境验证配置和提醒链路。
+当前版本为 `0.2.2`，属于早期可用版本。接口、配置字段和 CowAgent Skill 约定仍可能调整。建议个人使用前先在测试环境验证配置和提醒链路。
 
 ## 工作原理
 
@@ -163,6 +164,7 @@ python3 -m pip install -r requirements.txt
 - 关闭自动设置 crontab。
 - 显式选择内置示例适配器。
 - 接入自己的 Python 日历或行情适配器。
+- 接入自己的 A 股交易日历适配器。
 
 如果一台服务器运行多个 CowAgent 实例，每个实例必须使用独立的 `COW_WORKSPACE`。所有会写配置、缓存、scheduler、crontab 或用户上下文的 skill 都需要按 workspace 隔离；详细说明见 `references/cowagent-multi-instance-workspace.md`。
 
@@ -213,6 +215,7 @@ nano ~/cow/bond_reminders/config.json
 | 只改提醒时间或自动检查时间 | `examples/config.example.json` |
 | 显式使用内置示例数据源 | `examples/config.builtin-eastmoney-jisilu.example.json` |
 | 接入自己的 Python 数据源 | `examples/config.python-adapter.example.json` 和 `references/data-adapter-contract.md` |
+| 接入自己的交易日历 | `trade_calendar_strategy` 和 `references/data-adapter-contract.md` |
 | 查看内置东方财富字段映射 | `references/eastmoney-bond-fields.md` |
 | 查看内置行情示例 | `references/quote-data-source.md` |
 
@@ -242,6 +245,7 @@ python3 scripts/bond_calendar.py info
 | 查询今日申购 | `python3 scripts/bond_calendar.py find-subscribe --date 今天` |
 | 按日期范围查申购 | `python3 scripts/bond_calendar.py find-subscribe --date "3月5号-3月10号"` |
 | 按名称或代码查申购 | `python3 scripts/bond_calendar.py find-subscribe --query 123270` |
+| 查询 A 股交易日 | `python3 scripts/bond_calendar.py is-trade-day --date 今天` |
 | 准备当天申购和中签结果公布提醒 | `python3 scripts/bond_calendar.py prepare-daily-reminders` |
 | 只刷新当天缓存，不创建提醒 | `python3 scripts/bond_calendar.py prepare-daily-reminders --no-create-tasks` |
 | 查询上市日期 | `python3 scripts/bond_calendar.py find-listing --query 123270` |

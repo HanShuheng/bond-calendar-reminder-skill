@@ -16,6 +16,7 @@ from bond_calendar_lib.queries import *
 from bond_calendar_lib.formatters import *
 from bond_calendar_lib.scheduler import *
 from bond_calendar_lib.watchlist import *
+from bond_calendar_lib.trade_calendar import *
 from bond_calendar_lib.commands import *
 
 def main() -> int:
@@ -43,6 +44,9 @@ def main() -> int:
     p_find_subscribe.add_argument("--end", help="结束日期，左右闭区间")
     p_find_subscribe.add_argument("--days", type=int, help="从 --start 或今天开始的天数，包含起始日期")
     p_find_subscribe.add_argument("--query", help="债券名、转债代码、申购代码或配售代码")
+
+    p_trade_day = sub.add_parser("is-trade-day")
+    p_trade_day.add_argument("--date", help="单个日期，例如：今天、明天、2026-06-02、6月2号；不传则默认今天")
 
     p_find = sub.add_parser("find-listing")
     p_find.add_argument("--query", required=True)
@@ -88,6 +92,7 @@ def main() -> int:
     interactive_commands = {
         "find-subscribe",
         "find-listing",
+        "is-trade-day",
         "track-listing",
         "cancel-listing",
         "list-reminders",
@@ -95,7 +100,7 @@ def main() -> int:
     }
     if args.command in interactive_commands and maybe_prompt_update_once_per_day():
         return 0
-    if args.command not in {"setup-schedule"}:
+    if args.command not in {"setup-schedule", "is-trade-day"}:
         auto_setup_schedule_if_enabled()
     if args.command == "prepare-subscribe-today":
         return prepare_subscribe_today(create_tasks=not args.no_create_tasks)
@@ -109,6 +114,8 @@ def main() -> int:
         return send_prepared_winning(args.slot)
     if args.command == "find-subscribe":
         return find_subscribe(args.date, args.start, args.end, args.days, args.query)
+    if args.command == "is-trade-day":
+        return is_trade_day_command(args.date)
     if args.command == "find-listing":
         return find_listing(args.query)
     if args.command == "track-listing":

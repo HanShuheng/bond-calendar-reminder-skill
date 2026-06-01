@@ -26,6 +26,17 @@
 }
 ```
 
+交易日历使用 `trade_calendar_strategy`：
+
+```json
+{
+  "trade_calendar_strategy": {
+    "type": "python",
+    "adapter": "my_bond_data.adapters:MyTradeCalendarAdapter"
+  }
+}
+```
+
 `adapter` 必须使用 `module:attribute` 格式。`attribute` 可以是类、工厂函数或已创建的对象；最终对象需要提供下文约定的方法。
 
 ## CalendarAdapter
@@ -127,9 +138,34 @@ class QuoteAdapter:
 
 如果无法获取行情，返回 `None`。缺少 `change_percent` 时，项目不会创建上市日 `14:55` 涨停二次提醒。
 
+## TradeCalendarAdapter
+
+交易日历适配器必须提供：
+
+```python
+from datetime import date
+
+
+class TradeCalendarAdapter:
+    def is_trade_day(self, day: date) -> bool:
+        ...
+```
+
+约定：
+
+| 返回值 | 说明 |
+|---|---|
+| `True` | 该日期是中国 A 股交易日 |
+| `False` | 该日期不是中国 A 股交易日 |
+
+如果无法判断，应抛出异常。查询命令会输出 `ERROR`，不会猜测交易日结果。
+
 ## 自定义适配器示例
 
 ```python
+from datetime import date
+
+
 class MyCalendarAdapter:
     def load_events(self) -> list[dict]:
         return [
@@ -172,6 +208,13 @@ class MyQuoteAdapter:
             "quote_time": "2026-06-01T14:50:00",
             "source": "my-quote",
         }
+
+
+class MyTradeCalendarAdapter:
+    source = "my-trade-calendar"
+
+    def is_trade_day(self, day: date) -> bool:
+        return day.weekday() < 5
 ```
 
 ## 内置示例适配器
@@ -183,6 +226,7 @@ class MyQuoteAdapter:
 | `EastmoneyCalendarAdapter` | `calendar_strategy.type=builtin`，adapter `type=eastmoney` | 将东方财富可转债列表字段转换为标准 `BondEvent` |
 | `JisiluCalendarAdapter` | `calendar_strategy.type=builtin`，adapter `type=jisilu` | 将集思录日历字段转换为标准 `BondEvent` |
 | `EastmoneyPush2QuoteAdapter` | `quote_strategy.type=eastmoney_push2` | 将东方财富 push2 行情字段转换为标准 `BondQuote` |
+| `BaostockTradeCalendarAdapter` | `trade_calendar_strategy.type=baostock` | 使用 BaoStock `query_trade_dates` 判断中国 A 股交易日 |
 
 内置示例适配器的字段资料见：
 

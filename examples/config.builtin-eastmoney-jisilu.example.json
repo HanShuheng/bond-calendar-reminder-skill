@@ -45,6 +45,10 @@
       "Referer": "https://data.eastmoney.com/kzz/"
     }
   },
+  "trade_calendar_strategy": {
+    "_comment": "内置交易日历示例适配器，用于 is-trade-day 命令判断中国 A 股交易日。",
+    "type": "baostock"
+  },
   "auto_setup_schedule": {
     "enabled": true,
     "daily_time": "07:00",

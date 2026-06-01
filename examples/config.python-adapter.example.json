@@ -8,6 +8,10 @@
     "type": "python",
     "adapter": "my_bond_data.adapters:MyQuoteAdapter"
   },
+  "trade_calendar_strategy": {
+    "type": "python",
+    "adapter": "my_bond_data.adapters:MyTradeCalendarAdapter"
+  },
   "auto_setup_schedule": {
     "enabled": true,
     "daily_time": "07:00",

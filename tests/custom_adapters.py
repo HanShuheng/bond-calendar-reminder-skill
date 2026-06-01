@@ -24,3 +24,9 @@ class QuoteAdapter:
             "quote_time": "2026-03-05T14:50:00",
             "source": "custom-quote",
         }
+
+class TradeCalendarAdapter:
+    source = "custom-trade-calendar"
+
+    def is_trade_day(self, day):
+        return day.isoformat() == "2026-06-02"

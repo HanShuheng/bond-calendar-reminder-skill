@@ -534,6 +534,136 @@ class BondCalendarTests(unittest.TestCase):
         self.assertEqual(quote["change_percent"], 30.0)
         self.assertEqual(quote["source"], "custom-quote")
 
+    def test_python_trade_calendar_adapter_loads(self) -> None:
+        load_trade_calendar_adapter = self.ns["load_trade_calendar_adapter"]
+        load_trade_calendar_adapter.__globals__["load_config"] = lambda: {
+            "trade_calendar_strategy": {
+                "type": "python",
+                "adapter": "tests.custom_adapters:TradeCalendarAdapter",
+            }
+        }
+
+        adapter = load_trade_calendar_adapter()
+
+        self.assertEqual(adapter.source, "custom-trade-calendar")
+        self.assertTrue(adapter.is_trade_day(date(2026, 6, 2)))
+        self.assertFalse(adapter.is_trade_day(date(2026, 6, 1)))
+
+    def test_baostock_trade_calendar_adapter_returns_true_and_false(self) -> None:
+        adapter = self.ns["BaostockTradeCalendarAdapter"]()
+
+        class FakeResult:
+            error_code = "0"
+            error_msg = ""
+            fields = ["calendar_date", "is_trading_day"]
+
+            def __init__(self, value: str) -> None:
+                self.value = value
+                self.used = False
+
+            def next(self) -> bool:
+                if self.used:
+                    return False
+                self.used = True
+                return True
+
+            def get_row_data(self) -> list[str]:
+                return ["2026-06-02", self.value]
+
+        fake_baostock = types.SimpleNamespace(
+            login=lambda: print("login success!") or types.SimpleNamespace(error_code="0", error_msg=""),
+            logout=lambda: print("logout success!") or None,
+            query_trade_dates=lambda start_date, end_date: FakeResult("1"),
+        )
+        sys.modules["baostock"] = fake_baostock
+        with redirect_stdout(StringIO()) as output:
+            self.assertTrue(adapter.is_trade_day(date(2026, 6, 2)))
+        self.assertEqual(output.getvalue(), "")
+
+        fake_baostock.query_trade_dates = lambda start_date, end_date: FakeResult("0")
+        self.assertFalse(adapter.is_trade_day(date(2026, 6, 1)))
+
+    def test_baostock_trade_calendar_adapter_raises_on_failures(self) -> None:
+        adapter = self.ns["BaostockTradeCalendarAdapter"]()
+        error_type = self.ns["TradeCalendarError"]
+
+        sys.modules["baostock"] = types.SimpleNamespace(
+            login=lambda: types.SimpleNamespace(error_code="1", error_msg="login failed"),
+            logout=lambda: None,
+            query_trade_dates=lambda start_date, end_date: None,
+        )
+        with self.assertRaises(error_type):
+            adapter.is_trade_day(date(2026, 6, 2))
+
+        sys.modules["baostock"] = types.SimpleNamespace(
+            login=lambda: types.SimpleNamespace(error_code="0", error_msg=""),
+            logout=lambda: None,
+            query_trade_dates=lambda start_date, end_date: types.SimpleNamespace(
+                error_code="1",
+                error_msg="query failed",
+            ),
+        )
+        with self.assertRaises(error_type):
+            adapter.is_trade_day(date(2026, 6, 2))
+
+        class EmptyResult:
+            error_code = "0"
+            error_msg = ""
+            fields = ["calendar_date", "is_trading_day"]
+
+            def next(self) -> bool:
+                return False
+
+        sys.modules["baostock"] = types.SimpleNamespace(
+            login=lambda: types.SimpleNamespace(error_code="0", error_msg=""),
+            logout=lambda: None,
+            query_trade_dates=lambda start_date, end_date: EmptyResult(),
+        )
+        with self.assertRaises(error_type):
+            adapter.is_trade_day(date(2026, 6, 2))
+
+    def test_is_trade_day_command_parses_date_and_formats_result(self) -> None:
+        command = self.ns["is_trade_day_command"]
+        captured: dict[str, date] = {}
+
+        class FakeAdapter:
+            source = "fake-calendar"
+
+            def is_trade_day(self, day: date) -> bool:
+                captured["day"] = day
+                return True
+
+        command.__globals__["today_local"] = lambda: self.base
+        command.__globals__["load_trade_calendar_adapter"] = lambda: FakeAdapter()
+
+        with redirect_stdout(StringIO()) as output:
+            self.assertEqual(command("今天"), 0)
+
+        text = output.getvalue()
+        self.assert_status_prefix(text, "INFO")
+        self.assertEqual(captured["day"], self.base)
+        self.assertIn("是 A 股交易日", text)
+        self.assertIn("数据源：fake-calendar", text)
+
+    def test_is_trade_day_command_outputs_error_on_failure(self) -> None:
+        command = self.ns["is_trade_day_command"]
+
+        class BrokenAdapter:
+            source = "broken-calendar"
+
+            def is_trade_day(self, day: date) -> bool:
+                raise RuntimeError("boom")
+
+        command.__globals__["load_trade_calendar_adapter"] = lambda: BrokenAdapter()
+
+        with redirect_stdout(StringIO()) as output:
+            self.assertEqual(command("2026-06-02"), 1)
+
+        text = output.getvalue()
+        self.assert_status_prefix(text, "ERROR")
+        self.assertIn("交易日历查询失败", text)
+        self.assertIn("数据源：broken-calendar", text)
+
     def test_bond_quote_requires_change_percent(self) -> None:
         normalize = self.ns["normalize_standard_quote"]
         self.assertIsNone(normalize({"bond_code": "123267", "last_price": 120.0}))
@@ -885,6 +1015,7 @@ class BondCalendarTests(unittest.TestCase):
         self.assertIn("scheduler 待执行申购提醒", text)
         self.assertIn("scheduler 待执行中签结果公布提醒", text)
         self.assertIn("scheduler 待执行上市提醒", text)
+        self.assertIn("交易日历策略：baostock", text)
         self.assertIn("申购提醒", text)
         self.assertIn("中签结果公布提醒", text)
         self.assertIn("上市提醒", text)

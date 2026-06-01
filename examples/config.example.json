@@ -6,6 +6,9 @@
   "quote_strategy": {
     "_comment": "行情策略负责按转债代码返回标准 BondQuote。可使用自定义 Python 适配器，也可参考内置 eastmoney_push2 示例。"
   },
+  "trade_calendar_strategy": {
+    "_comment": "交易日历策略负责判断某日期是否为中国 A 股交易日。默认使用内置 baostock；也可以配置 type=python 和 adapter=module:Class 接入自己的交易日历适配器。"
+  },
   "auto_setup_schedule": {
     "_comment": "首次运行 skill 命令时自动检查并补齐 crontab 定时任务；设为 false 可关闭。修改时间后可运行 setup-schedule --replace --yes 生效。",
     "enabled": true,

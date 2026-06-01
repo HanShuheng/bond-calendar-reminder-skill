@@ -1,11 +1,11 @@
 ---
 name: bond-calendar-reminder-skill
-description: 可转债申购、中签结果公布与上市提醒。支持按日期或日期范围查询申购、自动准备中签结果公布提醒、按债券名/转债代码/申购代码/配售代码查询上市日期，并为中签转债创建上市提醒。
+description: 可转债申购、中签结果公布、上市提醒与 A 股交易日查询。支持按日期或日期范围查询申购、自动准备中签结果公布提醒、按债券名/转债代码/申购代码/配售代码查询上市日期，并为中签转债创建上市提醒。
 license: MIT
 compatibility: CowAgent 技能系统；Python 3.10+；默认内置东方财富日历、集思录日历兜底和东方财富 push2 行情示例适配器；自动提醒依赖 CowAgent scheduler 和本机 crontab。
 metadata:
   author: xixilili
-  version: 0.2.1
+  version: 0.2.2
   language: zh-CN
   category: finance
   tags:
@@ -20,6 +20,7 @@ metadata:
   optional_config:
     - calendar_strategy
     - quote_strategy
+    - trade_calendar_strategy
     - auto_setup_schedule
     - subscribe_reminder_schedule
     - winning_reminder_schedule
@@ -33,10 +34,12 @@ metadata:
     contract: references/data-adapter-contract.md
     calendar_strategy: calendar_strategy
     quote_strategy: quote_strategy
+    trade_calendar_strategy: trade_calendar_strategy
     builtin_examples:
       - EastmoneyCalendarAdapter
       - JisiluCalendarAdapter
       - EastmoneyPush2QuoteAdapter
+      - BaostockTradeCalendarAdapter
     example_references:
       - references/cowagent-multi-instance-workspace.md
       - references/eastmoney-bond-fields.md
@@ -76,7 +79,7 @@ metadata:
   requires:
     bins: ["python3"]
     env: []
-    python_packages: ["requests"]
+    python_packages: ["requests", "baostock"]
 allowed-tools: terminal scheduler file
 ---
 
@@ -98,6 +101,7 @@ allowed-tools: terminal scheduler file
 - 查询申购时支持按债券名、转债代码、申购代码、配售代码过滤。
 - 用户只提供债券名或代码查询申购时，查询数据源可见范围内的匹配申购日。
 - 查询可转债上市日期。
+- 查询某个日期是否为中国 A 股交易日。
 - 读取标准 `winning` 事件作为中签结果公布日；可在当天创建 `10:30`、`13:00` 中签结果公布提醒。
 - 用户中签后，记录转债并追踪上市日期；查到上市日期并创建提醒后停止追踪。
 - 上市日可按 `quote_strategy` 查询行情，涨幅达到阈值时创建二次提醒；内置东方财富 `push2` 示例适配器，也支持用户自定义 Python 行情适配器。
@@ -114,7 +118,8 @@ allowed-tools: terminal scheduler file
 - 已经过点的上市提醒不会补建；所有上市提醒点都过期时记录为 `expired`。
 - 上市日 30% 涨停后的 14:55 二次提醒依赖 `check-listing-limit-up` 命令和 `quote_strategy` 行情策略；不要把东方财富行情接口写死为唯一来源。
 - 本 skill 只要求标准 `BondEvent` / `BondQuote` 数据，不要求用户使用东方财富或集思录。
-- 内置东方财富、集思录和 push2 只是示例适配器；用户可通过 `calendar_strategy` / `quote_strategy` 切换到自己的 Python 适配器。
+- 本 skill 通过独立 `trade_calendar_strategy` 判断 A 股交易日，默认使用内置 BaoStock 示例适配器；查询失败时返回 `ERROR`，不猜测结果。
+- 内置东方财富、集思录、push2 和 BaoStock 只是示例适配器；用户可通过 `calendar_strategy` / `quote_strategy` / `trade_calendar_strategy` 切换到自己的 Python 适配器。
 - 如果要扩展数据字段，先阅读 `references/data-adapter-contract.md`；如果要维护内置东方财富示例适配器，再参考 `references/eastmoney-bond-fields.md`。
 - 不接入券商账户，不判断用户是否真实中签，不提供投资建议。
 - 不承担用户接入数据源、使用提醒或进行交易操作产生的任何法律、合规、资金或账号风险。
@@ -161,6 +166,25 @@ python {baseDir}/scripts/bond_calendar.py find-subscribe --start 今天 --days N
 
 日期范围按左右闭区间处理，包含开始日期和结束日期。
 跨年范围自动顺延，例如 `12月30号-1月3号` 解释为下一年 `1月3号`。
+
+### 查询 A 股交易日
+
+用户可能会说：
+
+```text
+今天是 A 股交易日吗？
+明天开市吗？
+2026-06-02 是不是交易日？
+6月2号是不是中国 A 股交易日？
+```
+
+执行：
+
+```bash
+python {baseDir}/scripts/bond_calendar.py is-trade-day --date "<单个日期>"
+```
+
+如果用户没有提供日期，省略 `--date`，默认查询今天。该命令只判断日期，不创建提醒任务，也不新增 crontab。
 
 ### 今日申购提醒查询
 
@@ -451,6 +475,7 @@ STATUS: 简短摘要
 | `EXPIRED` | 已查到上市日但提醒点均已过期 | 告知用户不会继续追踪 |
 | `ERROR` | 数据源或运行异常 | 告知用户稍后再试，不要声称已创建提醒 |
 | `INFO` | 待执行任务看板 | 保留看板结构，简短说明这是当前可转债 Skill 的待执行任务 |
+| `INFO` | A 股交易日查询结果 | 告知用户指定日期是否交易日，并保留数据源说明 |
 | `INFO` | 版本或更新检查结果 | 告知当前版本、最新版本，以及是否建议执行 `git pull` |
 
 ## 微信回复模板
@@ -470,6 +495,33 @@ STATUS: 简短摘要
 - `{listing_date}`：上市日期
 - `{task_count}`：任务数量
 - `{reason}`：失败或无结果原因
+
+### A 股交易日查询
+
+适用命令：`is-trade-day`。
+
+交易日：
+
+```text
+{date} 是中国 A 股交易日。
+
+数据源：{source}
+```
+
+非交易日：
+
+```text
+{date} 不是中国 A 股交易日。
+
+数据源：{source}
+```
+
+查询失败时：
+
+```text
+暂时无法确认 {date} 是否为 A 股交易日。
+可以稍后再试，或检查 trade_calendar_strategy 配置和 baostock 依赖。
+```
 
 ### 申购查询有结果
 

@@ -30,6 +30,7 @@ from .settings import (
     now_local, today_local,
 )
 from .storage import load_config, read_json, write_json
+from .trade_calendar import configured_trade_calendar_source, load_trade_calendar_adapter, trade_calendar_source
 from .watchlist import (
     cancel_listing, check_tracked_listings, load_watchlist, track_listing,
 )
@@ -390,6 +391,7 @@ def plugin_info() -> int:
     crontab_lines = read_crontab_lines()
     calendar_strategy = config.get("calendar_strategy") if isinstance(config.get("calendar_strategy"), dict) else {}
     quote_strategy = config.get("quote_strategy") if isinstance(config.get("quote_strategy"), dict) else {}
+    trade_calendar_strategy = config.get("trade_calendar_strategy") if isinstance(config.get("trade_calendar_strategy"), dict) else {}
     subscribe_tasks = collect_active_bond_tasks(tasks, "bond-subscribe-")
     winning_tasks = collect_active_bond_tasks(tasks, "bond-winning-")
     listing_tasks = collect_active_bond_tasks(tasks, "bond-listing-")
@@ -406,6 +408,10 @@ def plugin_info() -> int:
     limit_up_reminder = load_listing_limit_up_reminder_config()
     calendar_adapter = load_calendar_adapter()
     quote_adapter = load_quote_adapter()
+    try:
+        trade_calendar_strategy_name = trade_calendar_source(load_trade_calendar_adapter())
+    except Exception:
+        trade_calendar_strategy_name = f"{configured_trade_calendar_source()}（配置错误）"
 
     daily_lines: list[str] = []
     if isinstance(daily, dict) and daily:
@@ -453,6 +459,7 @@ def plugin_info() -> int:
     config_lines = [
         f"- 日历策略：{calendar_strategy.get('type') or type(calendar_adapter).__name__}",
         f"- 行情策略：{quote_strategy.get('type') or type(quote_adapter).__name__}",
+        f"- 交易日历策略：{trade_calendar_strategy_name}",
         f"- 提醒目标：{notify_target_status()}",
         f"- 申购提醒计划：{subscribe_schedule_text}",
         f"- 中签结果公布提醒计划：{winning_schedule_text}",
