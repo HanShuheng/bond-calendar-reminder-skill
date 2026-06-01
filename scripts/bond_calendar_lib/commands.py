@@ -240,6 +240,18 @@ def setup_schedule(
     planned = [f"- {job['time']} {job['command']}：{job['line']}" for job in jobs]
     installed = [f"- {line}" for line in result["installed"]]
     skipped = [f"- {line}" for line in result["skipped"]]
+    installed_count = len(result["installed"])
+    skipped_count = len(result["skipped"])
+    target_count = len(jobs)
+    installed_label = "本次实际新增" if apply else "预计新增（未写入）"
+    skipped_label = "已存在并跳过" if apply else "预计已存在并跳过"
+    final_plan = [
+        f"- {installed_label}：{installed_count} 个",
+        f"- {skipped_label}：{skipped_count} 个",
+        f"- 本次检查目标：{target_count} 个系统 crontab 任务",
+        "- 目标任务清单如下：",
+        *planned,
+    ]
     suggestions = [
         "- 如需修改时间，可重新运行 setup-schedule --replace --yes 并传入 --daily-time、--tracking-time、--limit-up-time。",
         "- 提醒发送时间请在 config.json 中修改，如 subscribe_reminder_schedule、winning_reminder_schedule、listing_reminder_schedule。",
@@ -248,9 +260,10 @@ def setup_schedule(
         suggestions.insert(0, "- 当前只是预览，没有写入 crontab；确认后加 --yes 执行。")
         print(format_status_message(
             "INFO",
-            "定时任务安装预览",
+            f"定时任务安装预览（本次检查目标 {target_count} 个系统 crontab 任务）",
             [
                 ("任务", planned),
+                ("详情", final_plan),
                 ("建议", suggestions),
             ],
         ))
@@ -258,9 +271,10 @@ def setup_schedule(
 
     print(format_status_message(
         "SCHEDULED",
-        "定时任务已检查并写入 crontab",
+        f"定时任务已检查：新增 {installed_count} 个，已存在 {skipped_count} 个，目标 {target_count} 个",
         [
-            ("任务", installed or ["- 没有新增任务"]),
+            ("任务", installed or ["- 没有新增任务；已有同名任务会保留"]),
+            ("详情", final_plan),
             ("跳过", skipped),
             ("建议", suggestions),
         ],
@@ -304,7 +318,9 @@ def auto_setup_schedule_if_enabled() -> None:
         return
     if result["installed"]:
         print(
-            "Info: 已自动设置可转债每日定时任务；如需修改时间，请运行 setup-schedule --replace --yes。",
+            f"Info: 已自动设置并检查可转债每日定时任务；"
+            f"本次新增 {len(result['installed'])} 个，目标任务共 {len(jobs)} 个。"
+            "如需修改时间，请运行 setup-schedule --replace --yes。",
             file=sys.stderr,
         )
 

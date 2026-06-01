@@ -26,6 +26,7 @@ metadata:
     - listing_reminder_schedule
     - listing_limit_up_reminder
   runtime_data_dir: ~/cow/bond_reminders
+  update_check_file: ~/cow/bond_reminders/update_check.json
   scheduler_file: ~/cow/scheduler/tasks.json
   timezone: Asia/Shanghai
   data_adapter:
@@ -106,6 +107,8 @@ allowed-tools: terminal scheduler file
 - 安装后通过 `post_install_command` 设置默认 crontab；如果安装阶段没有执行，首次运行 skill 命令时也会自动检查并补齐 3 个 crontab 定时任务。已有同名任务会跳过，不重复添加。
 - 用户如需修改每日检查时间，可运行 `setup-schedule --replace --yes`，或在 `config.json` 的 `auto_setup_schedule` 中配置。
 - 查询当前 skill 版本，并主动检查 GitHub main 分支是否有更新。
+- 用户使用查询、追踪、取消、列表或状态看板等交互命令时，每天最多自动检查一次更新；如果发现新版本，先询问用户是否更新。
+- 用户明确表示不更新时，执行 `skip-update --version <最新版本号>`，跳过这个版本；以后发布更高版本时仍会继续提示。
 - 已经过点的申购提醒不会补建，避免产生过去时间任务。
 - 已经过点的上市提醒不会补建；所有上市提醒点都过期时记录为 `expired`。
 - 上市日 30% 涨停后的 14:55 二次提醒依赖 `check-listing-limit-up` 命令和 `quote_strategy` 行情策略；不要把东方财富行情接口写死为唯一来源。
@@ -353,7 +356,32 @@ python {baseDir}/scripts/bond_calendar.py version
 python {baseDir}/scripts/bond_calendar.py check-update
 ```
 
-`check-update` 会读取本地 `SKILL.md` 版本，并检查 GitHub main 分支上的远端 `SKILL.md`。只有用户主动询问更新时才运行，不要在普通查询、提醒或自动任务中默认联网检查。
+`check-update` 会读取本地 `SKILL.md` 版本，并检查 GitHub main 分支上的远端 `SKILL.md`。用户主动询问更新时使用这个命令；普通交互命令由脚本内置的每日自动更新检查处理。
+
+### 每日自动更新检查
+
+脚本会在用户主动使用交互命令时自动做每日一次更新检查，适用命令包括：
+
+- `find-subscribe`
+- `find-listing`
+- `track-listing`
+- `cancel-listing`
+- `list-reminders`
+- `info`
+
+自动定时任务类命令不要被更新提示打断，例如 `prepare-daily-reminders`、`check-tracked-listings`、`check-listing-limit-up`。
+
+如果自动检查发现新版本，脚本会输出 `INFO`，并提示用户是否更新。此时先询问用户，不要继续编造原业务命令已经执行。
+
+用户表示“暂不更新”“跳过这个版本”“以后再说”时，执行：
+
+```bash
+python {baseDir}/scripts/bond_calendar.py skip-update --version "<最新版本号>"
+```
+
+执行后回复用户：已跳过该版本，之后不会再为这个版本提示；如果发布更高版本，后续每日检查仍会提示。
+
+当天已经检查过一次后，不再重复检查。检查状态记录在 `~/cow/bond_reminders/update_check.json`。
 
 ### 卸载和清理数据
 

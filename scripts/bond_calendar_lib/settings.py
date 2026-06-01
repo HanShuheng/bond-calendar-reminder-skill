@@ -43,6 +43,7 @@ CONFIG_FILE = DATA_DIR / "config.json"
 WATCHLIST_FILE = DATA_DIR / "watchlist.json"
 DAILY_SUBSCRIBE_FILE = DATA_DIR / "daily_subscribe.json"
 DAILY_WINNING_FILE = DATA_DIR / "daily_winning.json"
+UPDATE_CHECK_FILE = DATA_DIR / "update_check.json"
 TASKS_FILE = WORKSPACE / "scheduler" / "tasks.json"
 WEIXIN_CREDS_FILE = Path("~/.weixin_cow_credentials.json").expanduser()
 

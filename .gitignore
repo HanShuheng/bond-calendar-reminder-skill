@@ -2,6 +2,7 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .coverage
+.DS_Store
 .env
 .env.*
 
@@ -11,6 +12,7 @@ bond_reminders/
 /watchlist.json
 /daily_subscribe.json
 /daily_winning.json
+/update_check.json
 /bond_calendar.log
 config.local.json
 *cookie*

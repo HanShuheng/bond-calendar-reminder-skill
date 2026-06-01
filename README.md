@@ -91,6 +91,7 @@ bond-calendar-reminder-skill/
 ├── config.json
 ├── daily_subscribe.json
 ├── daily_winning.json
+├── update_check.json
 ├── watchlist.json
 └── bond_calendar.log
 ```
@@ -394,6 +395,12 @@ python3 scripts/bond_calendar.py version
 python3 scripts/bond_calendar.py check-update
 ```
 
+跳过某个已提示的新版本：
+
+```bash
+python3 scripts/bond_calendar.py skip-update --version 0.2.1
+```
+
 检查追踪列表：
 
 ```bash
@@ -410,6 +417,16 @@ python3 scripts/bond_calendar.py check-tracked-listings
 cd ~/cow/skills/bond-calendar-reminder-skill
 python3 scripts/bond_calendar.py check-update
 ```
+
+用户主动使用查询、追踪、取消、列表或状态看板等交互命令时，脚本会每天最多自动检查一次 GitHub main 分支版本。如果发现新版本，会先输出更新提示并询问是否更新；当天已经检查过后，不会重复检查。
+
+如果用户暂不更新，可以跳过这一个版本：
+
+```bash
+python3 scripts/bond_calendar.py skip-update --version <最新版本号>
+```
+
+跳过后不会再为同一个版本提示；如果以后发布了更高版本，下一次每日检查仍会提示。
 
 如果输出提示有新版本，按下面步骤升级：
 
@@ -563,7 +580,7 @@ python3 -m json.tool ~/cow/scheduler/tasks.json
 
 ## 安全与隐私
 
-- 不要提交个人 `config.json`、`watchlist.json`、`daily_subscribe.json`、`daily_winning.json`、日志、token、cookie、Authorization header 或其他敏感信息。
+- 不要提交个人 `config.json`、`watchlist.json`、`daily_subscribe.json`、`daily_winning.json`、`update_check.json`、日志、token、cookie、Authorization header 或其他敏感信息。
 - 不要把个人服务器路径、账号信息或私有数据源地址写死进代码。
 - `calendar_strategy` / `quote_strategy` 中的 headers 可能包含敏感信息。公开 issue 或 PR 时请先脱敏。
 - 本项目不会主动上传用户本地配置、提醒数据或 CowAgent 凭证。

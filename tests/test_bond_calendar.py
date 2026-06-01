@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import runpy
 import sys
+import tempfile
 import types
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
@@ -984,6 +985,53 @@ class BondCalendarTests(unittest.TestCase):
         self.assertIn("当前只是预览", text)
         self.assertIn("--daily-time", text)
 
+    def test_setup_schedule_output_lists_final_cron_plan(self) -> None:
+        setup = self.ns["setup_schedule"]
+        jobs = [
+            {"command": "prepare-daily-reminders", "time": "07:00", "line": "0 7 * * * python bond_calendar.py prepare-daily-reminders"},
+            {"command": "check-tracked-listings", "time": "07:05", "line": "5 7 * * * python bond_calendar.py check-tracked-listings"},
+            {"command": "check-listing-limit-up", "time": "14:50", "line": "50 14 * * * python bond_calendar.py check-listing-limit-up"},
+        ]
+        setup.__globals__["default_cron_jobs"] = lambda *args, **kwargs: jobs
+        setup.__globals__["install_cron_jobs"] = lambda jobs, apply=False, replace=False: {
+            "installed": [jobs[0]["line"], jobs[2]["line"]],
+            "skipped": [jobs[1]["line"]],
+        }
+
+        with redirect_stdout(StringIO()) as output:
+            self.assertEqual(setup(apply=True), 0)
+
+        text = output.getvalue()
+        self.assert_status_prefix(text, "SCHEDULED")
+        self.assertIn("新增 2 个，已存在 1 个，目标 3 个", text)
+        self.assertIn("本次实际新增：2 个", text)
+        self.assertIn("已存在并跳过：1 个", text)
+        self.assertIn("本次检查目标：3 个系统 crontab 任务", text)
+        self.assertIn("prepare-daily-reminders", text)
+        self.assertIn("check-tracked-listings", text)
+        self.assertIn("check-listing-limit-up", text)
+
+    def test_setup_schedule_preview_does_not_claim_actual_install(self) -> None:
+        setup = self.ns["setup_schedule"]
+        jobs = [
+            {"command": "prepare-daily-reminders", "time": "07:00", "line": "0 7 * * * python bond_calendar.py prepare-daily-reminders"},
+            {"command": "check-tracked-listings", "time": "07:05", "line": "5 7 * * * python bond_calendar.py check-tracked-listings"},
+            {"command": "check-listing-limit-up", "time": "14:50", "line": "50 14 * * * python bond_calendar.py check-listing-limit-up"},
+        ]
+        setup.__globals__["default_cron_jobs"] = lambda *args, **kwargs: jobs
+        setup.__globals__["install_cron_jobs"] = lambda jobs, apply=False, replace=False: {
+            "installed": jobs,
+            "skipped": [],
+        }
+
+        with redirect_stdout(StringIO()) as output:
+            self.assertEqual(setup(apply=False), 0)
+
+        text = output.getvalue()
+        self.assert_status_prefix(text, "INFO")
+        self.assertIn("预计新增（未写入）：3 个", text)
+        self.assertNotIn("本次实际新增：3 个", text)
+
     def test_auto_setup_schedule_installs_missing_jobs(self) -> None:
         auto_setup = self.ns["auto_setup_schedule_if_enabled"]
         captured: dict = {}
@@ -1061,6 +1109,58 @@ metadata:
         self.assertIn("当前版本：0.1.1", text)
         self.assertIn("最新版本：0.1.2", text)
         self.assertIn("建议更新", text)
+
+    def test_daily_update_prompt_runs_once_per_day(self) -> None:
+        maybe_prompt = self.ns["maybe_prompt_update_once_per_day"]
+
+        class FakeResponse:
+            text = "metadata:\n  version: 0.1.2\n"
+
+            def raise_for_status(self) -> None:
+                return None
+
+        with tempfile.TemporaryDirectory() as tmp:
+            maybe_prompt.__globals__["UPDATE_CHECK_FILE"] = Path(tmp) / "update_check.json"
+            maybe_prompt.__globals__["local_skill_version"] = lambda: "0.1.1"
+            maybe_prompt.__globals__["requests"].get = lambda *args, **kwargs: FakeResponse()
+
+            with redirect_stdout(StringIO()) as output:
+                self.assertTrue(maybe_prompt("https://example.com/SKILL.md"))
+
+            text = output.getvalue()
+            self.assert_status_prefix(text, "INFO")
+            self.assertIn("发现可转债提醒 Skill 新版本 0.1.2", text)
+            self.assertIn("skip-update --version 0.1.2", text)
+
+            with redirect_stdout(StringIO()) as second_output:
+                self.assertFalse(maybe_prompt("https://example.com/SKILL.md"))
+            self.assertEqual(second_output.getvalue(), "")
+
+    def test_skip_update_version_suppresses_same_version_prompt(self) -> None:
+        skip_update = self.ns["skip_update_version"]
+        maybe_prompt = self.ns["maybe_prompt_update_once_per_day"]
+
+        class FakeResponse:
+            text = "metadata:\n  version: 0.1.2\n"
+
+            def raise_for_status(self) -> None:
+                return None
+
+        with tempfile.TemporaryDirectory() as tmp:
+            state_file = Path(tmp) / "update_check.json"
+            skip_update.__globals__["UPDATE_CHECK_FILE"] = state_file
+            maybe_prompt.__globals__["UPDATE_CHECK_FILE"] = state_file
+            maybe_prompt.__globals__["local_skill_version"] = lambda: "0.1.1"
+            maybe_prompt.__globals__["requests"].get = lambda *args, **kwargs: FakeResponse()
+
+            with redirect_stdout(StringIO()) as skip_output:
+                self.assertEqual(skip_update("0.1.2"), 0)
+            self.assert_status_prefix(skip_output.getvalue(), "INFO")
+            self.assertIn("已跳过版本 0.1.2", skip_output.getvalue())
+
+            with redirect_stdout(StringIO()) as output:
+                self.assertFalse(maybe_prompt("https://example.com/SKILL.md"))
+            self.assertEqual(output.getvalue(), "")
 
 
 if __name__ == "__main__":

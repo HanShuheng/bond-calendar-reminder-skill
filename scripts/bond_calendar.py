@@ -72,14 +72,29 @@ def main() -> int:
         default=DEFAULT_UPDATE_CHECK_URL,
         help="远端 SKILL.md 地址，默认检查 GitHub main 分支",
     )
+    p_skip_update = sub.add_parser("skip-update")
+    p_skip_update.add_argument("--version", required=True, help="跳过指定远端版本，不再为该版本提示更新")
 
     args = parser.parse_args()
     if args.command == "version":
         return show_version()
     if args.command == "check-update":
         return check_update(args.remote_url)
+    if args.command == "skip-update":
+        ensure_dirs()
+        return skip_update_version(args.version)
 
     ensure_dirs()
+    interactive_commands = {
+        "find-subscribe",
+        "find-listing",
+        "track-listing",
+        "cancel-listing",
+        "list-reminders",
+        "info",
+    }
+    if args.command in interactive_commands and maybe_prompt_update_once_per_day():
+        return 0
     if args.command not in {"setup-schedule"}:
         auto_setup_schedule_if_enabled()
     if args.command == "prepare-subscribe-today":

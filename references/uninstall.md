@@ -166,6 +166,7 @@ ls -la ~/cow/bond_reminders 2>/dev/null || true
 rm -i ~/cow/bond_reminders/config.json 2>/dev/null || true
 rm -i ~/cow/bond_reminders/daily_subscribe.json 2>/dev/null || true
 rm -i ~/cow/bond_reminders/daily_winning.json 2>/dev/null || true
+rm -i ~/cow/bond_reminders/update_check.json 2>/dev/null || true
 rm -i ~/cow/bond_reminders/watchlist.json 2>/dev/null || true
 rm -i ~/cow/bond_reminders/bond_calendar.log 2>/dev/null || true
 rmdir ~/cow/bond_reminders 2>/dev/null || true
@@ -177,6 +178,7 @@ rmdir ~/cow/bond_reminders 2>/dev/null || true
 rm -i "$COW_WORKSPACE/bond_reminders/config.json" 2>/dev/null || true
 rm -i "$COW_WORKSPACE/bond_reminders/daily_subscribe.json" 2>/dev/null || true
 rm -i "$COW_WORKSPACE/bond_reminders/daily_winning.json" 2>/dev/null || true
+rm -i "$COW_WORKSPACE/bond_reminders/update_check.json" 2>/dev/null || true
 rm -i "$COW_WORKSPACE/bond_reminders/watchlist.json" 2>/dev/null || true
 rm -i "$COW_WORKSPACE/bond_reminders/bond_calendar.log" 2>/dev/null || true
 rmdir "$COW_WORKSPACE/bond_reminders" 2>/dev/null || true
