@@ -39,6 +39,7 @@ metadata:
     example_references:
       - references/eastmoney-bond-fields.md
       - references/quote-data-source.md
+      - references/uninstall.md
   reminders:
     auto_setup_schedule:
       default_enabled: true
@@ -119,6 +120,7 @@ allowed-tools: terminal scheduler file
 - `references/data-adapter-contract.md`：项目标准数据适配器协议。说明 `BondEvent`、`BondQuote`、Python 适配器方法、字段含义和示例代码。
 - `references/eastmoney-bond-fields.md`：内置东方财富日历示例适配器字段参考。后续维护东方财富字段映射时参考这里。
 - `references/quote-data-source.md`：内置行情示例适配器参考。说明东方财富 push2 和 `normalized_json` HTTP 示例。
+- `references/uninstall.md`：卸载与清理指南。说明如何移除 crontab、scheduler 任务、运行数据和 skill 代码目录。
 
 ## 用户意图
 
@@ -352,6 +354,25 @@ python {baseDir}/scripts/bond_calendar.py check-update
 ```
 
 `check-update` 会读取本地 `SKILL.md` 版本，并检查 GitHub main 分支上的远端 `SKILL.md`。只有用户主动询问更新时才运行，不要在普通查询、提醒或自动任务中默认联网检查。
+
+### 卸载和清理数据
+
+用户可能会说：
+
+```text
+怎么卸载这个可转债 skill？
+我想清空这个 skill 的数据
+不用这个可转债提醒了，怎么删除？
+如何删除它创建的定时任务？
+```
+
+回复时引导用户阅读：
+
+```text
+references/uninstall.md
+```
+
+说明清理范围包括 crontab 自动任务、CowAgent scheduler 一次性提醒任务、`~/cow/bond_reminders/` 运行数据和 skill 代码目录。涉及删除个人数据时，先提醒用户按文档备份，不要在没有用户确认的情况下代替用户执行删除命令。
 
 ## 脚本输出协议
 

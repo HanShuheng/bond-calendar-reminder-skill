@@ -75,7 +75,8 @@ bond-calendar-reminder-skill/
 ├── references/
 │   ├── data-adapter-contract.md
 │   ├── eastmoney-bond-fields.md
-│   └── quote-data-source.md
+│   ├── quote-data-source.md
+│   └── uninstall.md
 ├── scripts/
 │   ├── bond_calendar.py      # 命令行入口
 │   └── bond_calendar_lib/    # 配置、数据源、查询、scheduler 和业务命令模块
@@ -427,6 +428,17 @@ python3 scripts/bond_calendar.py info
 2. 更新 `CHANGELOG.md`。
 3. 提交代码并打 tag，例如 `v0.1.1`。
 4. 在 GitHub Release 中复制对应版本的 changelog。
+
+## 卸载与清理
+
+如果不再使用本 skill，需要同时清理 4 类内容：
+
+- crontab 中的每日自动检查任务。
+- CowAgent scheduler 中已经创建的一次性提醒任务。
+- `~/cow/bond_reminders/` 下的配置、缓存、追踪和日志。
+- skill 代码目录。
+
+完整步骤见 `references/uninstall.md`。建议先按文档备份，再删除运行数据；其中 `config.json`、`watchlist.json`、`daily_subscribe.json`、`daily_winning.json` 和 `bond_calendar.log` 都属于个人运行数据。
 
 ## 自动化
 

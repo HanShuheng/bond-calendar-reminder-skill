@@ -4,6 +4,13 @@
 
 项目早期采用轻量级语义化版本约定。Skill 版本号存放在 `SKILL.md` 的 `metadata.version` 中。
 
+## 未发布
+
+### 文档
+
+- 新增 `references/uninstall.md`，说明如何备份并清理 crontab、scheduler 任务、运行数据和 skill 代码目录。
+- 在 README 和 SKILL 中补充卸载与清理入口，方便用户停止使用时清空相关内容。
+
 ## 0.2.0 - 2026-06-01
 
 ### 变更
